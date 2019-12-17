@@ -367,10 +367,8 @@ async function onSendToMessengerButtonClick(sender, userPageId, b64ref) {
   }
 
   macros.log('Got webhook - received ', userObject);
-  const firebaseRef = await database.getRef(`/users/${sender}`);
-
-  let existingData = await firebaseRef.once('value');
-  existingData = existingData.val();
+  // TODO: check that sender is a string and not a number
+  const existingData = await database.get(sender);
 
   const aClass = (await elastic.get(elastic.CLASS_INDEX, userObject.classHash)).class;
 
@@ -461,7 +459,7 @@ async function onSendToMessengerButtonClick(sender, userPageId, b64ref) {
       macros.log('in webhook, did not finding matching f request ');
     }
 
-    firebaseRef.set(existingData);
+    database.set(sender, existingData);
   } else {
     let names = await notifyer.getUserProfileInfo(sender);
     if (!names || !names.first_name) {
@@ -493,7 +491,7 @@ async function onSendToMessengerButtonClick(sender, userPageId, b64ref) {
       notifyer.sendFBNotification(sender, `Successfully signed up for notifications for ${userObject.sectionHashes.length} sections in ${classCode}. Toggle the sliders back on https://searchneu.com to adjust notifications!`);
     }
 
-    database.set(`/users/${sender}`, newUser);
+    database.set(sender, newUser);
     if (getUserDataReqs[userObject.loginKey]) {
       macros.log('In webhook, responding to matching f request');
       getUserDataReqs[userObject.loginKey].res.send((JSON.stringify({
@@ -508,17 +506,15 @@ async function onSendToMessengerButtonClick(sender, userPageId, b64ref) {
   }
 }
 
+// TODO: maybe there should be delete functionality?
 async function unsubscribeSender(sender) {
-  const firebaseRef = await database.getRef(`/users/${sender}`);
-
-  let existingData = await firebaseRef.once('value');
-  existingData = existingData.val();
+  const existingData = await database.get(sender);
 
   if (existingData) {
     existingData.watchingClasses = [];
     existingData.watchingSections = [];
     macros.log('Unsubscribed ', sender, ' from everything.');
-    firebaseRef.set(existingData);
+    database.set(sender, existingData);
   } else {
     macros.log("Didn't unsubscribe ", sender, ' from anything because they were not in the database');
   }
@@ -589,27 +585,8 @@ app.post('/webhook/', wrap(async (req, res) => {
 // finds the user with the login key that's been requested
 // if the user doesn't exist, return
 async function findMatchingUser(requestLoginKey) {
-  // Loop over the db
-  const users = await database.get('users');
-  if (!users) {
-    return null;
-  }
-
-  // Loop over all the users
-  for (const user of Object.values(users)) {
-    if (!user.loginKeys) {
-      continue;
-    }
-
-
-    if (user.loginKeys.includes(requestLoginKey)) {
-      return user;
-    }
-  }
-
-  return null;
+  return await database.getByLoginKey(requestLoginKey);
 }
-
 
 // sends data to the database in the backend
 async function verifyRequestAndGetDbUser(req, res) {
@@ -638,7 +615,7 @@ async function verifyRequestAndGetDbUser(req, res) {
   }
 
   // Get the user from the db.
-  const user = await database.get(`/users/${senderId}`);
+  const user = await database.get(senderId);
   if (!user) {
     macros.log(`Didn't find valid user from client request: ${JSON.stringify(user)}`, req.body.loginKey);
     return null;
@@ -685,7 +662,7 @@ app.post('/addSection', wrap(async (req, res) => {
 
   userObject.watchingSections.push(sectionHash);
 
-  await database.set(`/users/${req.body.senderId}`, userObject);
+  await database.set(req.body.senderId, userObject);
   macros.log('sending done, section added. User:', userObject);
 
   // If the request also contains the notif data, we can send a notification to the user.
@@ -749,7 +726,7 @@ app.post('/removeSection', wrap(async (req, res) => {
 
   _.pull(userObject.watchingSections, sectionHash);
 
-  await database.set(`/users/${req.body.senderId}`, userObject);
+  await database.set(req.body.senderId, userObject);
   macros.log('sending done, section removed.');
 
 
@@ -816,7 +793,7 @@ app.post('/addClass', wrap(async (req, res) => {
 
   userObject.watchingClasses.push(classHash);
 
-  await database.set(`/users/${req.body.senderId}`, userObject);
+  await database.set(req.body.senderId, userObject);
   macros.log('sending done, class added. User is now:', userObject);
 
   const notifData = req.body.notifData;
@@ -931,7 +908,7 @@ app.post('/getUserData', wrap(async (req, res) => {
   // if not, we have to loop over all the users's to find a matching loginKey
 
   if (senderId) {
-    const user = await database.get(`/users/${senderId}`);
+    const user = await database.get(senderId);
 
     // Don't do long polling when the the sender id is given
     // and the user doesn't exist in the db because
