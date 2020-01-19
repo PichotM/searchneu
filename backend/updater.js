@@ -55,11 +55,6 @@ class Updater {
     macros.log('updating');
     const startTime = Date.now();
 
-    if ((await FollowedCourse.count()) === 0 && (await FollowedSection.count()) === 0) {
-      return;
-    }
-
-
     const classHashToUsers = {};
     const sectionHashToUsers = {};
 
@@ -75,6 +70,10 @@ class Updater {
 
     const classHashes = Object.keys(classHashToUsers);
     const sectionHashes = Object.keys(sectionHashToUsers);
+
+    if (classHashes.length === 0 && sectionHashes.length === 0) {
+      return;
+    }
 
     macros.log('watching classes ', classHashes.length);
 
@@ -266,7 +265,7 @@ class Updater {
       };
     }
     await elastic.bulkUpdateFromMap(elastic.CLASS_INDEX, classMap);
-    await dumpProcessor.main(output, {});
+    await dumpProcessor.main({ termDump: output });
 
     // Loop through the messages and send them.
     // Do this as the very last stage on purpose.
