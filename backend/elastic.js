@@ -217,12 +217,13 @@ class Elastic {
 
   /**
    * Search for classes and employees
-   * @param  {string}  query  The search to query for
-   * @param  {string}  termId The termId to look within
-   * @param  {integer} min    The index of first document to retreive
-   * @param  {integer} max    The index of last document to retreive
+   * @param  {string}  query   The search to query for
+   * @param  {string}  termId  The termId to look within
+   * @param  {integer} min     The index of first document to retreive
+   * @param  {integer} max     The index of last document to retreive
+   * @param  {Object}  filters The filters for search query in advanced search
    */
-  async search(query, termId, min, max) {
+  async search(query, termId, min, max, filters) {
     if (!this.subjects) {
       this.subjects = new Set(await this.getSubjectsFromClasses());
     }
@@ -278,6 +279,40 @@ class Elastic {
         },
       },
     });
+
+    if (filters) {
+      for (let [ filterKey, filterValues ] of Object.entries(filters)) {
+        switch (filterKey) {
+          case 'college':
+            // filter by colleges, like Koury
+            macros.log('1:' + filterValues);
+            break;
+          case 'major':
+            // filter by major, like computer science
+            macros.log('2:' + filterValues);
+            break;
+          case 'NUPath':
+            // filter by NUPath
+            macros.log('3:' + filterValues);
+            break;
+          case 'timeOfClass':
+            // filter by time of class
+            macros.log('4:' + filterValues);
+            break;
+          case 'dayOfClass':
+            // filter by weekday of the classes
+            macros.log('5:' + filterValues);
+            break;
+          case 'semester':
+            // TODO double check if this is in filters or in termID
+            macros.log('6:' + filterValues);
+            break;
+          default:
+            macros.log('Invalid filter key:' + filterValues);
+            break;
+        }
+      }
+    }
 
     return {
       searchContent: searchOutput.body.hits.hits.map((hit) => { return { ...hit._source, score: hit._score }; }),
