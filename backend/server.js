@@ -291,7 +291,7 @@ app.get('/search', wrap(async (req, res) => {
     return;
   }
 
-  const { searchContent, took, resultCount } = await elastic.search(req.query.query, req.query.termId, req.query.minIndex, req.query.maxIndex, req.body.filters);
+  const { searchContent, took, resultCount } = await elastic.search(req.query.query, req.query.termId, req.query.minIndex, req.query.maxIndex, req.query.filters);
   const midTime = Date.now();
 
   let string;

@@ -281,34 +281,34 @@ class Elastic {
     });
 
     if (filters) {
-      for (let [ filterKey, filterValues ] of Object.entries(filters)) {
+      for (const [filterKey, filterValues] of Object.entries(filters)) {
         switch (filterKey) {
           case 'college':
             // filter by colleges, like Koury
-            macros.log('1:' + filterValues);
+            macros.log(`1 college: ${filterValues}`);
             break;
           case 'major':
             // filter by major, like computer science
-            macros.log('2:' + filterValues);
+            macros.log(`2 major: ${filterValues}`);
             break;
           case 'NUPath':
             // filter by NUPath
-            macros.log('3:' + filterValues);
+            macros.log(`3 NUPath: ${filterValues}`);
             break;
           case 'timeOfClass':
             // filter by time of class
-            macros.log('4:' + filterValues);
+            macros.log(`4 timeOfClass: ${filterValues}`);
             break;
           case 'dayOfClass':
             // filter by weekday of the classes
-            macros.log('5:' + filterValues);
+            macros.log(`5 dayOfClass: ${filterValues}`);
             break;
           case 'semester':
             // TODO double check if this is in filters or in termID
-            macros.log('6:' + filterValues);
+            macros.log(`6 semester: ${filterValues}`);
             break;
           default:
-            macros.log('Invalid filter key:' + filterValues);
+            macros.log(`Error: Invalid filter key ${filterKey}:${filterValues}`);
             break;
         }
       }
