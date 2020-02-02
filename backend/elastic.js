@@ -307,8 +307,8 @@ class Elastic {
           case 'dayOfClass':
             // filter by weekday of the classes
             macros.log(`>>>>>>>> 5 dayOfClass: ${filterValues}`);
-            searchContent = searchContent.filter(eachSearchContent =>
-              _.intersection(Object.keys(((eachSearchContent.sections || {}).meetings || {}).times || {}), filterValues).length > 0);
+            // searchContent = searchContent.filter(eachSearchContent =>
+            //   _.intersection(Object.keys(((eachSearchContent.sections || {}).meetings || {}).times || {}), filterValues).length > 0);
             break;
           case 'semester':
             // TODO double check if this is in filters or in termID
