@@ -291,6 +291,7 @@ app.get('/search', wrap(async (req, res) => {
     return;
   }
 
+  // encodeURIComponent(JSON.stringyfy(filters_json))
   const { searchContent, took, resultCount } = await elastic.search(req.query.query, req.query.termId, req.query.minIndex, req.query.maxIndex, req.query.filters);
   const midTime = Date.now();
 

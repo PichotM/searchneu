@@ -278,15 +278,19 @@ class Elastic {
           },
         },
       },
-    });
+    })
+
+    let searchContent = searchOutput.body.hits.hits.map((hit) => { return { ...hit._source, score: hit._score }; });
 
     if (filters) {
-      filters_json = decodeURIComponent(filters)
+      const filters_json = JSON.parse(decodeURIComponent(filters))
       for (const [filterKey, filterValues] of Object.entries(filters_json)) {
         switch (filterKey) {
           case 'college':
             // filter by colleges, like Koury
             macros.log(`>>>>>>>> 1 college: ${filterValues}`);
+            searchContent = searchContent.filter(eachSearchContent =>
+              _.intersection(eachSearchContent.class.classAttributes, filterValues).length > 0);
             break;
           case 'major':
             // filter by major, like computer science
@@ -303,6 +307,8 @@ class Elastic {
           case 'dayOfClass':
             // filter by weekday of the classes
             macros.log(`>>>>>>>> 5 dayOfClass: ${filterValues}`);
+            searchContent = searchContent.filter(eachSearchContent =>
+              _.intersection(Object.keys(((eachSearchContent.sections || {}).meetings || {}).times || {}), filterValues).length > 0);
             break;
           case 'semester':
             // TODO double check if this is in filters or in termID
@@ -315,8 +321,9 @@ class Elastic {
       }
     }
 
+
     return {
-      searchContent: searchOutput.body.hits.hits.map((hit) => { return { ...hit._source, score: hit._score }; }),
+      searchContent: searchContent,
       resultCount: searchOutput.body.hits.total.value,
       took: searchOutput.body.took,
     };
