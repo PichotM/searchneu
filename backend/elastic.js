@@ -7,6 +7,9 @@
 import { Client } from '@elastic/elasticsearch';
 import _ from 'lodash';
 import macros from './macros';
+import { Course } from './database/models/index';
+import hydrateSerializer from './database/serializers/hydrateSerializer';
+import Keys from '../common/Keys';
 
 const URL = macros.getEnvVariable('elasticURL') || 'http://localhost:9200';
 const client = new Client({ node: URL });
@@ -92,7 +95,7 @@ class Elastic {
   }
 
   /**
-   * Bulk update a collection of documents using ids from hashmap
+   U* Bulk update a collection of documents using ids fromhashmap
    * @param  {string} indexName The index to update into
    * @param  {Object} map       A map of document ids to document sources to update
    */
@@ -279,8 +282,16 @@ class Elastic {
       },
     });
 
+    const resultModels = await Course.findAll({ where: { id: searchOutput.body.hits.hits.map((hit) => { return hit._id; }) } });
+    const resultScores = searchOutput.body.hits.hits.reduce((acc, elem) => {
+      acc[elem._id] = elem._score;
+      return acc;
+    }, {});
+
+    const results = await hydrateSerializer.bulkSerialize(resultModels);
+
     return {
-      searchContent: searchOutput.body.hits.hits.map((hit) => { return { ...hit._source, score: hit._score }; }),
+      searchContent: Object.values(results).map((res) => { return { ...res, score: resultScores[Keys.getClassHash(res.class)] }; }),
       resultCount: searchOutput.body.hits.total.value,
       took: searchOutput.body.took,
     };
