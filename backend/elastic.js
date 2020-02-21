@@ -252,7 +252,7 @@ class Elastic {
       fields = ['class.subject^10', 'class.classId'];
     }
 
-    const searchOutput = await client.search({
+    const defaultQuery = {
       index: `${this.EMPLOYEE_INDEX},${this.CLASS_INDEX}`,
       from: min,
       size: max - min,
@@ -282,7 +282,9 @@ class Elastic {
           },
         },
       },
-    });
+    };
+
+    const searchOutput = await client.search(defaultQuery);
 
     let searchContent = searchOutput.body.hits.hits.map((hit) => { return { ...hit._source, score: hit._score }; });
 
@@ -294,16 +296,22 @@ class Elastic {
             // filter by colleges, like Koury
             macros.log(`>>>>>>>> 1 college: ${filterValues}`);
             searchContent = searchContent.filter((eachSearchContent) => {
-              _.intersection(eachSearchContent.class.classAttributes, filterValues).length > 0
+              return _.intersection(eachSearchContent.class.classAttributes, filterValues).length > 0;
             });
             break;
           case 'major':
             // filter by major, like computer science
             macros.log(`>>>>>>>> 2 major: ${filterValues}`);
+            searchContent = searchContent.filter((eachSearchContent) => {
+              return _.intersection(eachSearchContent.class.subject, filterValues).length > 0;
+            });
             break;
           case 'NUPath':
             // filter by NUPath
             macros.log(`>>>>>>>> 3 NUPath: ${filterValues}`);
+            searchContent = searchContent.filter((eachSearchContent) => {
+              return _.intersection(eachSearchContent.class.classAttributes, filterValues).length > 0;
+            });
             break;
           case 'timeOfClass':
             // filter by time of class
@@ -312,12 +320,22 @@ class Elastic {
           case 'dayOfClass':
             // filter by weekday of the classes
             macros.log(`>>>>>>>> 5 dayOfClass: ${filterValues}`);
-            // searchContent = searchContent.filter(eachSearchContent =>
-            //   _.intersection(Object.keys(((eachSearchContent.sections || {}).meetings || {}).times || {}), filterValues).length > 0);
+            searchContent = searchContent.filter((eachSearchContent) => {
+              const allSectionsTimes = eachSearchContent.sections.forEach((section) => {
+                return section.meetings.forEach((meeting) => {
+                  return Object.keys(meeting.times);
+                });
+              });
+              macros.log(allSectionsTimes);
+              return _.intersection(allSectionsTimes, filterValues).length > 0;
+            });
             break;
           case 'semester':
             // TODO double check if this is in filters or in termID
             macros.log(`>>>>>>>> 6 semester: ${filterValues}`);
+            searchContent = searchContent.filter((eachSearchContent) => {
+              return eachSearchContent.termId === filterValues;
+            });
             break;
           default:
             macros.log(`>>>>>>>> Error: Invalid filter key ${filterKey}:${filterValues}`);
