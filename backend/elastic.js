@@ -282,19 +282,20 @@ class Elastic {
           },
         },
       },
-    })
+    });
 
     let searchContent = searchOutput.body.hits.hits.map((hit) => { return { ...hit._source, score: hit._score }; });
 
     if (filters) {
-      const filters_json = JSON.parse(decodeURIComponent(filters))
-      for (const [filterKey, filterValues] of Object.entries(filters_json)) {
+      const filtersJson = JSON.parse(decodeURIComponent(filters));
+      for (const [filterKey, filterValues] of Object.entries(filtersJson)) {
         switch (filterKey) {
           case 'college':
             // filter by colleges, like Koury
             macros.log(`>>>>>>>> 1 college: ${filterValues}`);
-            searchContent = searchContent.filter(eachSearchContent =>
-              _.intersection(eachSearchContent.class.classAttributes, filterValues).length > 0);
+            searchContent = searchContent.filter((eachSearchContent) => {
+              _.intersection(eachSearchContent.class.classAttributes, filterValues).length > 0
+            });
             break;
           case 'major':
             // filter by major, like computer science
