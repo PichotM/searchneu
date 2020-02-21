@@ -50,7 +50,7 @@ describe('elastic', () => {
 
       let firstResult = getFirstClassResult(await elastic.search(item.join(''), '202010', 0, 1));
       expect(Keys.getClassHash(firstResult)).toBe(Keys.getClassHash(canonicalResult));
- 
+
       let secondResult = getFirstClassResult(await elastic.search(item.join(' ').toUpperCase(), '202010', 0, 1));
       expect(Keys.getClassHash(secondResult)).toBe(Keys.getClassHash(canonicalResult));
 
@@ -65,7 +65,7 @@ describe('elastic', () => {
   });
 
   it('autocorrects typos', async () => {
-    let firstResult = getFirstClassResult(await elastic.search('fundimentals of compiter science', '202010', 0, 1)); 
+    let firstResult = getFirstClassResult(await elastic.search('fundimentals of compiter science', '202010', 0, 1));
     expect(Keys.getClassHash(firstResult)).toBe('neu.edu/202010/CS/2500');
   });
 
@@ -78,4 +78,22 @@ describe('elastic', () => {
     let firstResult = getFirstClassResult(await elastic.search('10460', '202010', 0, 1));
     expect(Keys.getClassHash(firstResult)).toBe('neu.edu/202010/CS/2500');
   });
+
+  it('filters by college', async () => {
+    let firstResult = getFirstClassResult(await elastic.search('10460', '202010', 0, 1,
+    '%7B%22college%22%3A%5B%22Computer%26Info%20Sci%22%5D%7D'));
+    expect(firstResult.classAttributes.includes('Computer&Info Sci')).toBe(true);
+  })
+
+  it('filters by major', async () => {
+    let firstResult = getFirstClassResult(await elastic.search('10460', '202010', 0, 1,
+    '%7B%22major%22%3A%5B%22CS%22%5D%7D'));
+    expect(firstResult.subject).toBe('CS');
+  })
+
+  it('filters by NUPath', async () => {
+    let firstResult = getFirstClassResult(await elastic.search('cs2500', '202010', 0, 100,
+    '%7B%22NUPath%22%3A%5B%22NUpath%20Analyzing%2FUsing%20Data%22%5D%7D'));
+    expect(firstResult.classAttributes.includes('NUpath Analyzing/Using Data')).toBe(true);
+  })
 });
