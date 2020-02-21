@@ -303,7 +303,7 @@ class Elastic {
             // filter by major, like computer science
             macros.log(`>>>>>>>> 2 major: ${filterValues}`);
             searchContent = searchContent.filter((eachSearchContent) => {
-              return _.intersection(eachSearchContent.class.subject, filterValues).length > 0;
+              return filterValues.includes(eachSearchContent.class.subject);
             });
             break;
           case 'NUPath':
@@ -321,13 +321,15 @@ class Elastic {
             // filter by weekday of the classes
             macros.log(`>>>>>>>> 5 dayOfClass: ${filterValues}`);
             searchContent = searchContent.filter((eachSearchContent) => {
-              const allSectionsTimes = eachSearchContent.sections.forEach((section) => {
-                return section.meetings.forEach((meeting) => {
-                  return Object.keys(meeting.times);
+              const allSectionsTimes = eachSearchContent.sections.map((section) => {
+                return (section.meetings || []).map((meeting) => {
+                  return Object.keys(meeting.times || {});
                 });
               });
-              macros.log(allSectionsTimes);
-              return _.intersection(allSectionsTimes, filterValues).length > 0;
+              const validSectionTimes = _.flattenDeep(allSectionsTimes).map((timeObject) => {
+                return Number(timeObject);
+              });
+              return _.intersection(validSectionTimes, filterValues).length > 0;
             });
             break;
           case 'semester':
